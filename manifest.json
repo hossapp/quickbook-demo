@@ -1,0 +1,72 @@
+{
+  "triggers": {
+    "listener": {
+      "module": "@hossapp/http",
+      "version": "1.0.0",
+      "functionName": "listener",
+      "flow": "listAccounts",
+      "params": {
+        "path": "/accounts",
+        "method": "GET"
+      },
+      "result": {
+        "statusCode": {
+          "type": "Value",
+          "value": 200
+        },
+        "statusReason": {
+          "type": "Value",
+          "value": "OK"
+        },
+        "body": {
+          "type": "Dynamic",
+          "value": "JSON.stringify(steps.transformQuickbookAccountResponse.output)"
+        }
+      }
+    }
+  },
+  "flows": {
+    "listAccounts": {
+      "start": "requestQuickbook",
+      "onError": "catchallErrorHandler",
+      "steps": {
+        "requestQuickbook": {
+          "module": "@hossapp/http",
+          "version": "1.0.0",
+          "functionName": "request",
+          "params": {
+            "method": "GET",
+            "url": "https://sandbox-quickbooks.api.intuit.com/v3/company/4620816365148044900/cdc?entities=account&changedSince=2020-01-01T00:00:00",
+            "headers": {
+              "accept": "application/json",
+              "authorization": "Bearer eyJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiYWxnIjoiZGlyIn0..nECp_phZStlQ3S5uj8VJ2w.VWLcdCBhtvofkVr3VL0lPzrjHYI-A5Ilc1JFub_dgHQ_KNemyWAYd4KYv_wzpOmcrl9Y3oxsSMaRPmQTc07DLYntiFV4QvfMud3WJP_KMhChgwXt2w3k0ZQJ7NF41PK9kNFlLP6MUpO5iLWhJ9n3XF8dD_L0X80GNadz1-ZxU8lz4OMj-5HBbkjReZcuh2PqbO2gxJRv4BBJxB94TZKlU8hcUckRSQjzJoUM-wC2jhBygvHpAp8F0KxYITTxQxvsvaNnlxPP_k545xlq7TCTiwVjgpzwKeN-xKVBoROKta2TLeM-MX4OBexmb2XGeAEfCBhgBdfBLISK4rnQcKG0Yt-DGENm7oPFZMkGvEdpkRKkXMhGq6aXj0tqgkafHBBvi66Sh9s9JGzktJoBJBchoNxITmyPgF2noIRJXxofq7yXA4sY5s2toWyOmPvRr0zAwhl4I3ciCFKJNuOUq8NLfzTJUO7JxOgLhN4b5qYnIxlZg1kYfZGzYa5EwhD3tH1doGFUsNrIU2jEmj1OILktetpvCkn95inh8PAL4EMHwszZ4-UuO9H2Nx6iwLannU5iXvfqfjdkR7aaSwGGVJucFfGz3pd4nU-gZpX2guIZ9ipnEC8caop44c2GQkI1_ASH7Vkg9XKA3ffhSHKFB_cuAbd6LlYOu2-WYDOIGPw6gXdE26R3OwEFTYOrQsLNh6TP1bO0iIMQ16XxB38Pma_WdLQUsBPqhpSrb4AG1c6Z_hGKHwD3NfiIKeSkdKpVSjBx.1YORvGli-r2UUsagflJNEg"
+            }
+          },
+          "onError": "quickbookErrorHandler",
+          "next": "transformQuickbookAccountResponse"
+        },
+        "quickbookErrorHandler": {
+          "code": "context.response={statusCode: 500, body: 'internal server error'};",
+          "end": true
+        },
+        "transformQuickbookAccountResponse": {
+          "module": "@hossapp/transform",
+          "version": "1.0.0",
+          "functionName": "transformJSON",
+          "end": true,
+          "params": {
+            "input": {
+              "type": "Dynamic",
+              "value": "context.steps.requestQuickbook.output.data"
+            },
+            "jsonataExpression": "CDCResponse.QueryResponse.Account.Name"
+          }
+        },
+        "catchallErrorHandler": {
+          "code": "context.response={statusCode: 500, body: 'internal server error'};",
+          "end": true
+        }
+      }
+    }
+  }
+}
