@@ -18,6 +18,6 @@
   "homepage": "https://github.com/hossapp/quickbook-demo#readme",
   "dependencies": {
     "@hossapp/http": "^1.0.2",
-    "@hossapp/runtime": "^1.0.1"
+    "@hossapp/runtime": "^1.0.2"
   }
 }

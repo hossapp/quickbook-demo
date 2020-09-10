@@ -19,47 +19,68 @@
           "value": "OK"
         },
         "body": {
-          "type": "Dynamic",
-          "value": "JSON.stringify(steps.transformQuickbookAccountResponse.output)"
+          "type": "Code",
+          "value": "JSON.stringify(context.steps.transformQuickbooksAccountResponse)"
         }
       }
     }
   },
   "flows": {
     "listAccounts": {
-      "start": "requestQuickbook",
+      "start": "requestQuickbooks",
       "onError": "catchallErrorHandler",
+
       "steps": {
-        "requestQuickbook": {
-          "module": "@hossapp/http",
+        "requestQuickbooks": {
+          "type": "Module",
+          "module": "@hossapp/quickbooks-connector",
+          "className": "QuickbooksConnector",
           "version": "1.0.0",
-          "functionName": "request",
-          "params": {
-            "method": "GET",
-            "url": "https://sandbox-quickbooks.api.intuit.com/v3/company/4620816365148044900/cdc?entities=account&changedSince=2020-01-01T00:00:00",
-            "headers": {
-              "accept": "application/json",
-              "authorization": "Bearer eyJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiYWxnIjoiZGlyIn0..nECp_phZStlQ3S5uj8VJ2w.VWLcdCBhtvofkVr3VL0lPzrjHYI-A5Ilc1JFub_dgHQ_KNemyWAYd4KYv_wzpOmcrl9Y3oxsSMaRPmQTc07DLYntiFV4QvfMud3WJP_KMhChgwXt2w3k0ZQJ7NF41PK9kNFlLP6MUpO5iLWhJ9n3XF8dD_L0X80GNadz1-ZxU8lz4OMj-5HBbkjReZcuh2PqbO2gxJRv4BBJxB94TZKlU8hcUckRSQjzJoUM-wC2jhBygvHpAp8F0KxYITTxQxvsvaNnlxPP_k545xlq7TCTiwVjgpzwKeN-xKVBoROKta2TLeM-MX4OBexmb2XGeAEfCBhgBdfBLISK4rnQcKG0Yt-DGENm7oPFZMkGvEdpkRKkXMhGq6aXj0tqgkafHBBvi66Sh9s9JGzktJoBJBchoNxITmyPgF2noIRJXxofq7yXA4sY5s2toWyOmPvRr0zAwhl4I3ciCFKJNuOUq8NLfzTJUO7JxOgLhN4b5qYnIxlZg1kYfZGzYa5EwhD3tH1doGFUsNrIU2jEmj1OILktetpvCkn95inh8PAL4EMHwszZ4-UuO9H2Nx6iwLannU5iXvfqfjdkR7aaSwGGVJucFfGz3pd4nU-gZpX2guIZ9ipnEC8caop44c2GQkI1_ASH7Vkg9XKA3ffhSHKFB_cuAbd6LlYOu2-WYDOIGPw6gXdE26R3OwEFTYOrQsLNh6TP1bO0iIMQ16XxB38Pma_WdLQUsBPqhpSrb4AG1c6Z_hGKHwD3NfiIKeSkdKpVSjBx.1YORvGli-r2UUsagflJNEg"
+          "constructorParams": {
+            "clientId": {
+              "type": "Value",
+              "value": "ABPeL4NrrA8DgUYiVLWWtQO4nHKFeboV0v24SroB5KhatoktEV"
+            },
+            "clientSecret": {
+              "type": "Value",
+              "value": "exnKGl6PeIRifLpGp7Rr0uwwxq27wQpAX17YqEBX"
+            },
+            "accessToken": {
+              "type": "Value",
+              "value": "eyJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiYWxnIjoiZGlyIn0..Pte9YX0JLkKhvLVAaOnsDw.8z75cAYKseK5AmEGQ1HpgtoxH9xBbepyQQPFspnSx7rA8OreSgFzE7Wkq8p77l3Fp8DE9yj3_Yo5WnqLgjofeg3dIZ5-SlwhTHRuFznVwAB0oZxZP3E3f-HPhHQ3qbbUs0QJzmXoT1Q-c-tHNn7YvPuIQIARAYdwL-RPknvg3K-NXRMaZWxaKkiW3qGuCIiZkMxzU4EXLXspxBJ0j4HhR0qn7zASJYdzyiljgEehgkRWykm_ekJif-63CEKI4Vixcnr1ecV3CxwtCZC8Tot6qdtUDBeSmHcIpo0rNrK4iCSS8YULpnpQbtjLX1LSKOvF1ZZbmHdY8qCF0WGVYsFWjQRZC4kV4EP-B34Zd7YbsUkApHPgC1INU5EMjWRuKuoZQ7Z1dPkljRDnY7-Ih0ONA1-RtxeHUNlv38LM0YtPdcgqTNBkxf2iT4pJcrZcRT0YSUUIBqnoaadIOMYZP5jdPO6P0fvAo-SZ8GN7D-eNEyVyietJC0y9nS7Q8Mvxnl7n_1v2PcvmKph0D0Lywy7LuDTTXCUytXBmu1FExK8pqZqQlVaplq92dRL1VQlOBe6aPaDZlOkqHBStVSKaVm50GH7vKS6sEp6jEQqbZ1mAk2cQ0n-us9uP3GpX1Gb9XXnsSqYQNGBI0aoHqo3dF_OBExll7ByB6sQpuor-ep30qPUiYcjeMfIRFsEULQnccqLzVpat-pbKyq-Nse0nVEGMhQDZzUJkKRkL9hnWyTqrpMPB-9YXlXci9BkXeRVnjkIm.cGXCm9Bvk5-yIyhS1y-egw"
+            },
+            "refreshToken": {
+              "type": "Value",
+              "value": "AB116084668876iYzVjLmL7ZvBUfoZAyfPd8fWyhJcrxvfGR9O"
+            },
+            "realmId": {
+              "type": "Value",
+              "value": "4620816365148044900"
             }
           },
-          "onError": "quickbookErrorHandler",
-          "next": "transformQuickbookAccountResponse"
+          "functionName": "findAccounts",
+          "onError": "quickbooksErrorHandler",
+          "next": "transformQuickbooksAccountResponse"
         },
-        "quickbookErrorHandler": {
+        "quickbooksErrorHandler": {
           "code": "context.response={statusCode: 500, body: 'internal server error'};",
           "end": true
         },
-        "transformQuickbookAccountResponse": {
+        "transformQuickbooksAccountResponse": {
+          "type": "Module",
           "module": "@hossapp/transform",
           "version": "1.0.0",
           "functionName": "transformJSON",
           "end": true,
           "params": {
             "input": {
-              "type": "Dynamic",
-              "value": "context.steps.requestQuickbook.output.data"
+              "type": "Code",
+              "value": "context.steps.requestQuickbooks"
             },
-            "jsonataExpression": "CDCResponse.QueryResponse.Account.Name"
+            "jsonataExpression": {
+              "type": "Value",
+              "value": "QueryResponse.Account.{\"name\": Name,\"type\": AccountType, \"subType\": AccountSubType, \"id\": Id}"
+            }
           }
         },
         "catchallErrorHandler": {
