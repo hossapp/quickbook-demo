@@ -1,57 +1,254 @@
 {
+  "globals": {
+    "source": {
+      "type": "Value",
+      "value": "quickbooks"
+    },
+    "clientId": {
+      "type": "Value",
+      "value": "ABPeL4NrrA8DgUYiVLWWtQO4nHKFeboV0v24SroB5KhatoktEV"
+    },
+    "clientSecret": {
+      "type": "Value",
+      "value": "exnKGl6PeIRifLpGp7Rr0uwwxq27wQpAX17YqEBX"
+    },
+    "pool": {
+      "type": "Module",
+      "module": "@hossapp/sql",
+      "functionName": "createPostgresPool",
+      "params": {
+        "url": {
+          "type": "Value",
+          "value": "postgres://himstjsqezkpen:87c43a57e49ffd3c7bc9bcc74e87976c7948dbd4b3e0b14bfac60e864154924f@ec2-18-215-99-63.compute-1.amazonaws.com:5432/d6i6320j6hdt38?ssl=require"
+        }
+      }
+    },
+    "oauthClient": {
+      "type": "Module",
+      "module": "simple-oauth2",
+      "className": "AuthorizationCode",
+      "constructorParams": {
+        "client": {
+          "type": "Code",
+          "value": "({\"id\":\"ABPeL4NrrA8DgUYiVLWWtQO4nHKFeboV0v24SroB5KhatoktEV\",\"secret\":\"exnKGl6PeIRifLpGp7Rr0uwwxq27wQpAX17YqEBX\"})"
+        },
+        "auth": {
+          "type": "Code",
+          "value": "({tokenHost:'https://oauth.platform.intuit.com',\"authorizeHost\":\"https://appcenter.intuit.com\",\"tokenPath\":\"/oauth2/v1/tokens/bearer\",\"authorizePath\":\"/connect/oauth2\"})"
+        }
+      }
+    }
+  },
   "triggers": {
-    "listener": {
+    "authorize": {
       "module": "@hossapp/http",
       "version": "1.0.0",
       "functionName": "listener",
-      "flow": "listAccounts",
+      "flow": "authorize",
       "params": {
-        "path": "/accounts",
+        "path": "/authorize",
         "method": "GET"
       },
       "result": {
         "statusCode": {
           "type": "Value",
-          "value": 200
+          "value": 302
         },
-        "statusReason": {
-          "type": "Value",
-          "value": "OK"
-        },
-        "body": {
+        "headers": {
           "type": "Code",
-          "value": "JSON.stringify(context.steps.transformQuickbooksAccountResponse)"
+          "value": "({Location: context.steps.authorize})"
+        }
+      }
+    },
+    "authorizeCallback": {
+      "module": "@hossapp/http",
+      "version": "1.0.0",
+      "functionName": "listener",
+      "flow": "authorizeCallback",
+      "params": {
+        "path": "/authorizeCallback",
+        "method": "GET"
+      },
+      "result": {
+        "statusCode": {
+          "type": "Value",
+          "value": 302
+        },
+        "headers": {
+          "type": "Code",
+          "value": "({Location: \"https://www.tesorio.com\"})"
         }
       }
     }
   },
   "flows": {
-    "listAccounts": {
-      "start": "requestQuickbooks",
-      "onError": "catchallErrorHandler",
-
+    "authorize": {
+      "start": "authorize",
       "steps": {
-        "requestQuickbooks": {
+        "authorize": {
+          "type": "Module",
+          "module": "@hossapp/oauth",
+          "version": "1.0.0",
+          "functionName": "authorize",
+          "params": {
+            "client": {
+              "type": "Global",
+              "value": "oauthClient"
+            },
+            "callbackUrl": {
+              "type": "Value",
+              "value": "https://apitracker.ngrok.io/authorizeCallback"
+            },
+            "scope": {
+              "type": "Value",
+              "value": "com.intuit.quickbooks.accounting"
+            },
+            "state": {
+              "type": "Context",
+              "value": "trigger.request.query.userId"
+            }
+          },
+          "end": true
+        }
+      }
+    },
+    "authorizeCallback": {
+      "start": "authorizeCallback",
+      "steps": {
+        "authorizeCallback": {
+          "type": "Module",
+          "module": "@hossapp/oauth",
+          "version": "1.0.0",
+          "functionName": "authorizeCallback",
+          "params": {
+            "client": {
+              "type": "Global",
+              "value": "oauthClient"
+            },
+            "callbackUrl": {
+              "type": "Value",
+              "value": "https://apitracker.ngrok.io/authorizeCallback"
+            },
+            "scope": {
+              "type": "Value",
+              "value": "com.intuit.quickbooks.accounting"
+            },
+            "code": {
+              "type": "Context",
+              "value": "trigger.request.query['code']"
+            },
+            "state": {
+              "type": "Context",
+              "value": "trigger.request.query['state']"
+            },
+            "realmId": {
+              "type": "Context",
+              "value": "trigger.request.query['realmId']"
+            }
+          },
+          "next": "persistAccessToken"
+        },
+        "persistAccessToken": {
+          "type": "Module",
+          "module": "@hossapp/sql",
+          "version": "1.0.0",
+          "functionName": "query",
+          "params": {
+            "connection": {
+              "type": "Global",
+              "value": "pool"
+            },
+            "query": {
+              "type": "Value",
+              "value": "INSERT INTO oauth_tokens (source, user_id, access_token, expires_at, refresh_token, refresh_token_expires_in) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (user_id, source) DO UPDATE SET access_token=EXCLUDED.access_token, expires_at=EXCLUDED.expires_at,refresh_token=EXCLUDED.refresh_token,refresh_token_expires_in=EXCLUDED.refresh_token_expires_in"
+            },
+            "params": {
+              "type": "Code",
+              "value": "[globals.source, context.trigger.request.query.state, context.steps.authorizeCallback.token.access_token, context.steps.authorizeCallback.token.expires_at, context.steps.authorizeCallback.token.refresh_token, context.steps.authorizeCallback.token.x_refresh_token_expires_in]"
+            }
+          },
+          "next": "triggerSync"
+        },
+        "triggerSync": {
+          "type": "Flow",
+          "value": "sync",
+          "params": {
+            "userId": {
+              "type": "Context",
+              "value": "trigger.request.query['state']"
+            }
+          },
+          "async": true,
+          "end": true
+        }
+      }
+    },
+    "sync": {
+      "start": "findLastSyncTimestamp",
+      "steps": {
+        "findLastSyncTimestamp": {
+          "type": "Module",
+          "module": "@hossapp/sql",
+          "version": "1.0.0",
+          "functionName": "query",
+          "params": {
+            "connection": {
+              "type": "Global",
+              "value": "pool"
+            },
+            "query": {
+              "type": "Value",
+              "value": "SELECT case count(*) when 0 then now() - interval '2 year' else max(ts) end AS ts from last_sync_timestamp WHERE user_id=$1 AND source=$2"
+            },
+            "params": {
+              "type": "Code",
+              "value": "[context.trigger.params.userId, globals.source]"
+            }
+          },
+          "next": "getAccessToken"
+        },
+        "getAccessToken": {
+          "type": "Module",
+          "module": "@hossapp/sql",
+          "version": "1.0.0",
+          "functionName": "query",
+          "params": {
+            "connection": {
+              "type": "Global",
+              "value": "pool"
+            },
+            "query": {
+              "type": "Value",
+              "value": "SELECT access_token, refresh_token from oauth_tokens WHERE user_id=$1 AND source=$2"
+            },
+            "params": {
+              "type": "Code",
+              "value": "[context.trigger.params.userId, globals.source]"
+            }
+          },
+          "next": "queryResource"
+        },
+        "queryResource": {
           "type": "Module",
           "module": "@hossapp/quickbooks-connector",
           "className": "QuickbooksConnector",
           "version": "1.0.0",
           "constructorParams": {
             "clientId": {
-              "type": "Value",
-              "value": "ABPeL4NrrA8DgUYiVLWWtQO4nHKFeboV0v24SroB5KhatoktEV"
+              "type": "Global",
+              "value": "clientId"
             },
             "clientSecret": {
-              "type": "Value",
-              "value": "exnKGl6PeIRifLpGp7Rr0uwwxq27wQpAX17YqEBX"
+              "type": "Global",
+              "value": "clientSecret"
             },
             "accessToken": {
-              "type": "Value",
-              "value": "eyJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiYWxnIjoiZGlyIn0..Pte9YX0JLkKhvLVAaOnsDw.8z75cAYKseK5AmEGQ1HpgtoxH9xBbepyQQPFspnSx7rA8OreSgFzE7Wkq8p77l3Fp8DE9yj3_Yo5WnqLgjofeg3dIZ5-SlwhTHRuFznVwAB0oZxZP3E3f-HPhHQ3qbbUs0QJzmXoT1Q-c-tHNn7YvPuIQIARAYdwL-RPknvg3K-NXRMaZWxaKkiW3qGuCIiZkMxzU4EXLXspxBJ0j4HhR0qn7zASJYdzyiljgEehgkRWykm_ekJif-63CEKI4Vixcnr1ecV3CxwtCZC8Tot6qdtUDBeSmHcIpo0rNrK4iCSS8YULpnpQbtjLX1LSKOvF1ZZbmHdY8qCF0WGVYsFWjQRZC4kV4EP-B34Zd7YbsUkApHPgC1INU5EMjWRuKuoZQ7Z1dPkljRDnY7-Ih0ONA1-RtxeHUNlv38LM0YtPdcgqTNBkxf2iT4pJcrZcRT0YSUUIBqnoaadIOMYZP5jdPO6P0fvAo-SZ8GN7D-eNEyVyietJC0y9nS7Q8Mvxnl7n_1v2PcvmKph0D0Lywy7LuDTTXCUytXBmu1FExK8pqZqQlVaplq92dRL1VQlOBe6aPaDZlOkqHBStVSKaVm50GH7vKS6sEp6jEQqbZ1mAk2cQ0n-us9uP3GpX1Gb9XXnsSqYQNGBI0aoHqo3dF_OBExll7ByB6sQpuor-ep30qPUiYcjeMfIRFsEULQnccqLzVpat-pbKyq-Nse0nVEGMhQDZzUJkKRkL9hnWyTqrpMPB-9YXlXci9BkXeRVnjkIm.cGXCm9Bvk5-yIyhS1y-egw"
+              "type": "Context",
+              "value": "steps.getAccessToken[0].access_token"
             },
             "refreshToken": {
-              "type": "Value",
-              "value": "AB116084668876iYzVjLmL7ZvBUfoZAyfPd8fWyhJcrxvfGR9O"
+              "type": "Context",
+              "value": "steps.getAccessToken[0].refresh_token"
             },
             "realmId": {
               "type": "Value",
@@ -60,32 +257,75 @@
           },
           "functionName": "findAccounts",
           "onError": "quickbooksErrorHandler",
-          "next": "transformQuickbooksAccountResponse"
+          "next": "transformResponse"
         },
-        "quickbooksErrorHandler": {
-          "code": "context.response={statusCode: 500, body: 'internal server error'};",
-          "end": true
-        },
-        "transformQuickbooksAccountResponse": {
+        "transformResponse": {
           "type": "Module",
           "module": "@hossapp/transform",
           "version": "1.0.0",
           "functionName": "transformJSON",
-          "end": true,
+          "next": "saveResources",
           "params": {
             "input": {
-              "type": "Code",
-              "value": "context.steps.requestQuickbooks"
+              "type": "Context",
+              "value": "steps.queryResource"
             },
             "jsonataExpression": {
-              "type": "Value",
-              "value": "QueryResponse.Account.{\"name\": Name,\"type\": AccountType, \"subType\": AccountSubType, \"id\": Id}"
+              "type": "Code",
+              "value": "`QueryResponse.Account.{\"userId\":\"${context.trigger.params.userId}\",\"name\": Name,\"subAccount\": SubAccount,\"currentBalance\":CurrentBalance,\"createdAt\": MetaData.CreateTime,\"updatedAt\": MetaData.LastUpdatedTime,\"type\": AccountType, \"subType\": AccountSubType, \"id\": Id}`"
             }
           }
         },
-        "catchallErrorHandler": {
+        "saveResources": {
+          "type": "Module",
+          "module": "@hossapp/iterator",
+          "version": "1.0.0",
+          "functionName": "series",
+          "end": true,
+          "params": {
+            "values": {
+              "type": "Context",
+              "value": "steps.transformResponse"
+            },
+            "flow": {
+              "type": "Value",
+              "value": "saveSingleRecord"
+            },
+            "continueIfError": {
+              "type": "Value",
+              "value": "true"
+            }
+          }
+        },
+        "quickbooksErrorHandler": {
           "code": "context.response={statusCode: 500, body: 'internal server error'};",
           "end": true
+        }
+      }
+    },
+    "saveSingleRecord": {
+      "start": "saveSingleRecord",
+      "steps": {
+        "saveSingleRecord": {
+          "type": "Module",
+          "module": "@hossapp/sql",
+          "version": "1.0.0",
+          "functionName": "query",
+          "end": true,
+          "params": {
+            "connection": {
+              "type": "Global",
+              "value": "pool"
+            },
+            "query": {
+              "type": "Value",
+              "value": "INSERT INTO accounts (user_id, qb_id, name, subtype, sub_account, current_balance, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (user_id, qb_id) DO UPDATE SET name=EXCLUDED.name, subtype=EXCLUDED.subtype,sub_account=EXCLUDED.sub_account,current_balance=EXCLUDED.current_balance,updated_at=EXCLUDED.updated_at"
+            },
+            "params": {
+              "type": "Code",
+              "value": "[context.trigger.params.userId, context.trigger.params.id, context.trigger.params.name, context.trigger.params.subtype, context.trigger.params.subAccount, context.trigger.params.currentBalance, context.trigger.params.createdAt, context.trigger.params.updatedAt]"
+            }
+          }
         }
       }
     }
