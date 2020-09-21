@@ -126,8 +126,8 @@
               "value": "oauthClient"
             },
             "callbackUrl": {
-              "type": "Value",
-              "value": "https://apitracker.ngrok.io/authorizeCallback"
+              "type": "Global",
+              "value": "env.AUTHORIZE_CALLBACK_URL"
             },
             "scope": {
               "type": "Value",
