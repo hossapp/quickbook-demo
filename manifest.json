@@ -5,12 +5,12 @@
       "value": "quickbooks"
     },
     "clientId": {
-      "type": "Value",
-      "value": "ABPeL4NrrA8DgUYiVLWWtQO4nHKFeboV0v24SroB5KhatoktEV"
+      "type": "Global",
+      "value": "env.CLIENT_ID"
     },
     "clientSecret": {
-      "type": "Value",
-      "value": "exnKGl6PeIRifLpGp7Rr0uwwxq27wQpAX17YqEBX"
+      "type": "Global",
+      "value": "env.CLIENT_SECRET"
     },
     "pool": {
       "type": "Module",
@@ -18,8 +18,8 @@
       "functionName": "createPostgresPool",
       "params": {
         "url": {
-          "type": "Value",
-          "value": "postgres://himstjsqezkpen:87c43a57e49ffd3c7bc9bcc74e87976c7948dbd4b3e0b14bfac60e864154924f@ec2-18-215-99-63.compute-1.amazonaws.com:5432/d6i6320j6hdt38?ssl=require"
+          "type": "Global",
+          "value": "env.DATABASE_URL"
         }
       }
     },
@@ -30,7 +30,7 @@
       "constructorParams": {
         "client": {
           "type": "Code",
-          "value": "({\"id\":\"ABPeL4NrrA8DgUYiVLWWtQO4nHKFeboV0v24SroB5KhatoktEV\",\"secret\":\"exnKGl6PeIRifLpGp7Rr0uwwxq27wQpAX17YqEBX\"})"
+          "value": "({id:globals.env.CLIENT_ID,secret:globals.env.CLIENT_SECRET})"
         },
         "auth": {
           "type": "Code",

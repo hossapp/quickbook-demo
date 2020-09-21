@@ -18,9 +18,11 @@
   "homepage": "https://github.com/hossapp/quickbook-demo#readme",
   "dependencies": {
     "@hossapp/http": "^1.0.3",
-    "@hossapp/runtime": "^1.1.0",
+    "@hossapp/iterator": "^1.0.1",
     "@hossapp/oauth": "^1.0.2",
     "@hossapp/quickbooks-connector": "^1.0.0",
+    "@hossapp/runtime": "^1.1.2",
+    "@hossapp/sql": "^1.1.0",
     "@hossapp/transform": "^1.0.0"
   }
 }
